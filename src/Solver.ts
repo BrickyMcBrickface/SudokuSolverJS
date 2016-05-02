@@ -35,6 +35,7 @@ export class Solver {
      */
     public nextSolution(log?: boolean): Solution | NoSolution {
         const complete = Math.pow(2, this._grid.gridSize.size) - 1;
+        const completePlusOne = complete + 1;
         
         // Check for completeness.
         // This can happen when the grid is complete upon load.
@@ -88,7 +89,7 @@ export class Solver {
             let value: number = this.getNextValue(boxCellValues);
             
             // Try each available box cell value.
-            for(; value < complete && boxCellValues !== complete; 
+            for(; value !== completePlusOne && boxCellValues !== complete; 
                 boxCellValues |= value, value = this.getNextValue(boxCellValues)) {
                     
                 // Keep track of the current permutation state.
@@ -107,7 +108,8 @@ export class Solver {
                 let column = SolverUtility.getColumnBitForBoxCell(box, boxCell, this._grid.gridSize);
                 
                 if(log) {
-                    console.log(this._stateStack.currentIndex + '. ', 'Checking Box=', SolverUtility.getBoxNumberForBoxBit(box), 
+                    console.log(this._stateStack.currentIndex + '. ', 
+                        'Checking Box=', SolverUtility.getBoxNumberForBoxBit(box), 
                         'BoxCell=', SolverUtility.getBoxCellNumberForBoxCellBit(boxCell),
                         'Row=', GridSizeUtility.getBoxCellRow(this._grid.gridSize, 
                             SolverUtility.getBoxNumberForBoxBit(box),
@@ -140,7 +142,7 @@ export class Solver {
             }
             
             // Check if nothing was found.
-            if(value > complete || boxCellValues === complete) {
+            if(value === completePlusOne || boxCellValues === complete) {
                 if(log) {
                     console.log(this._stateStack.currentIndex + '. ', 'No more values to check, popping.');
                 }
