@@ -4,19 +4,35 @@ import { Solution, NoSolution } from './Solution';
 import { SolverUtility } from './SolverUtility';
 import { GridSizeUtility } from './GridSizeUtility';
 
+/**
+ * Grid solver.
+ */
 export class Solver {
     private readonly _grid: Grid;
     private _stateStack: SolverStateStack;
     
+    /**
+     * Creates a new Solver object.
+     * @param {Grid} grid - The grid.
+     */
     public constructor(grid: Grid) {
         this._grid = grid;
         this._stateStack = new SolverStateStack(SolverState.create(grid));
     }
     
+    /**
+     * Gets the grid.
+     * @return {Grid} The grid.
+     */
     public get grid(): Grid {
         return this._grid;
     }
     
+    /**
+     * Attempts to solve the grid using the previous state (if one exists).
+     * @param {boolean} log - True to log the output; False otherwise.
+     * @return {Solution | NoSolution} A Solution object (if found); otherwise, a NoSolution object.
+     */
     public nextSolution(log?: boolean): Solution | NoSolution {
         const complete = Math.pow(2, this._grid.gridSize.size) - 1;
         
@@ -141,20 +157,40 @@ export class Solver {
         }
     }
     
+    /**
+     * Gets the next available value from the available box-cell values.
+     * @param {number} values - The box-cell available values.
+     * @return {number} The next value.
+     */
     private getNextValue(values: number): number {
         return (values + 1) & ~values;
     }
     
+    /**
+     * Gets the next available box from the current state.
+     * @return {number} The next box.
+     */
     private getNextBox(): number {
         return (this._stateStack.current.boxes + 1) & ~this._stateStack.current.boxes;
     }
     
+    /**
+     * Gets the next available box-cell from the current state.
+     * @param {number} box - The box.
+     * @return {number} The next box-cell.
+     */
     private getNextBoxCell(box: number): number {
         const boxCells = this._stateStack.current.boxCells[box];
         
         return (boxCells + 1) & ~boxCells;
     }
     
+    /**
+     * Gets the available box-cell values.
+     * @param {number} box - The box.
+     * @param {number} boxCell - The box-cell.
+     * @return {number} The available box-cell values.
+     */
     private getBoxCellValues(box: number, boxCell: number): number {
         const row = SolverUtility.getRowBitForBoxCell(box, boxCell, this._grid.gridSize);
         const column = SolverUtility.getColumnBitForBoxCell(box, boxCell, this._grid.gridSize);
