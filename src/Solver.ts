@@ -16,8 +16,13 @@ export class Solver {
      * @param {Grid} grid - The grid.
      */
     public constructor(grid: Grid) {
+        // Validate the grid size.
+        if(grid.gridSize.size > 32) {
+            throw 'Grid is too large. Maxiumum grid size is 32x32';
+        }
+        
         this._grid = grid;
-        this._stateStack = new SolverStateStack(SolverState.create(grid));
+        this._stateStack = new SolverStateStack(SolverState.createFromGrid(grid));
     }
     
     /**
@@ -34,8 +39,8 @@ export class Solver {
      * @return {Solution | NoSolution} A Solution object (if found); otherwise, a NoSolution object.
      */
     public nextSolution(log?: boolean): Solution | NoSolution {
-        const complete = Math.pow(2, this._grid.gridSize.size) - 1;
-        const completePlusOne = complete + 1;
+        const complete = ((1 << this._grid.gridSize.size) >>> 0) - 1;
+        const completePlusOne = 1 << this._grid.gridSize.size;
         
         // Check for completeness.
         // This can happen when the grid is complete upon load.
@@ -85,11 +90,11 @@ export class Solver {
                 continue;
             }
             
-            // Get the box cell value.
-            let value: number = this.getNextValue(boxCellValues);
+            let value: number;
             
             // Try each available box cell value.
-            for(; value !== completePlusOne && boxCellValues !== complete; 
+            for(value = this.getNextValue(boxCellValues); 
+                value !== completePlusOne && boxCellValues !== complete; 
                 boxCellValues |= value, value = this.getNextValue(boxCellValues)) {
                     
                 // Keep track of the current permutation state.
@@ -97,7 +102,7 @@ export class Solver {
                 this._stateStack.current.currentBoxCellValues = boxCellValues | value;
                 
                 // Keep track of state.
-                this._stateStack.push(this._stateStack.current.clone());
+                this._stateStack.push(SolverState.createFromState(this._stateStack.current));
                 this._stateStack.current.currentBox = 0;
                 this._stateStack.current.currentBoxCell = 0;
                 this._stateStack.current.currentBoxCellValue = 0;

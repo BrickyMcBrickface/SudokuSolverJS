@@ -1,6 +1,10 @@
 import { Grid } from './Grid';
 import { SolverUtility } from './SolverUtility';
 
+export interface SolverStateKeyValuePair {
+    [bit: number]: number
+}
+
 /**
  * Handles the state for the Solver.
  */
@@ -8,13 +12,13 @@ export class SolverState {
     /** The available and used boxes. */
     public boxes: number = 0;
     /** The available and used box-cells per box. */
-    public boxCells: { [bit: number]: number } = { };
+    public boxCells: SolverStateKeyValuePair = { };
     /** The available and used box values per box. */
-    public boxValues: { [bit: number]: number } = { };
+    public boxValues: SolverStateKeyValuePair = { };
     /** The available and used column values per column. */
-    public columnValues: { [bit: number]: number } = { };
+    public columnValues: SolverStateKeyValuePair = { };
     /** The available and used row values per row. */
-    public rowValues: { [bit: number]: number } = { };
+    public rowValues: SolverStateKeyValuePair = { };
     
     /** The current box-cell available values. */
     public currentBoxCellValues: number = 0;
@@ -32,36 +36,14 @@ export class SolverState {
     private constructor() { }
     
     /**
-     * Clones the SolverState object.
-     * @return {SolverState} A SolverState object.
-     */
-    public clone(): SolverState {
-        let state = new SolverState();
-        
-        state.boxes = this.boxes;
-        
-        SolverState.copy(this.boxCells, state.boxCells);
-        SolverState.copy(this.boxValues, state.boxValues);
-        SolverState.copy(this.columnValues, state.columnValues);
-        SolverState.copy(this.rowValues, state.rowValues);
-        
-        state.currentBox = this.currentBox;
-        state.currentBoxCell = this.currentBoxCell;
-        state.currentBoxCellValue = this.currentBoxCellValue;
-        state.currentBoxCellValues = this.currentBoxCellValues;
-        
-        return state;
-    }
-    
-    /**
      * Factory method for creating a SolverState object using a grid.
      * @param {Grid} grid - The grid.
      * @return {SolverState} A SolverState object.
      */
-    public static create(grid: Grid): SolverState {
+    public static createFromGrid(grid: Grid): SolverState {
         let state = new SolverState();
         
-        const complete = Math.pow(2, grid.gridSize.size) - 1;
+        const complete = ((1 << grid.gridSize.size) >>> 0) - 1;
         
         for(let cell of grid.cells) {
             let location = cell.location;
@@ -89,11 +71,34 @@ export class SolverState {
     }
     
     /**
+     * Factory method for creating a SolverState object using a SolverState object.
+     * @param {SolverState} - The solver state to create from.
+     * @return {SolverState} A SolverState object.
+     */
+    public static createFromState(state: SolverState): SolverState {
+        let nextState = new SolverState();
+        
+        nextState.boxes = state.boxes;
+        
+        SolverState.copy(state.boxCells, nextState.boxCells);
+        SolverState.copy(state.boxValues, nextState.boxValues);
+        SolverState.copy(state.columnValues, nextState.columnValues);
+        SolverState.copy(state.rowValues, nextState.rowValues);
+        
+        nextState.currentBox = state.currentBox;
+        nextState.currentBoxCell = state.currentBoxCell;
+        nextState.currentBoxCellValue = state.currentBoxCellValue;
+        nextState.currentBoxCellValues = state.currentBoxCellValues;
+        
+        return nextState;
+    }
+    
+    /**
      * Copies key-value pairs from one object to another.
      * @param {} input - The source object.
      * @param {} output - The target object.
      */
-    private static copy(input: { [bit: number]: number }, output: { [bit: number]: number }) {
+    private static copy(input: SolverStateKeyValuePair, output: SolverStateKeyValuePair) {
         Object.keys(input).forEach(key => output[key] = input[key]);
     }
 }

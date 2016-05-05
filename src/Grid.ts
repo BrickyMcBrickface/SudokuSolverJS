@@ -58,6 +58,10 @@ export class Grid {
         for(let i = 0; i < gridSize.cellCount; i++) {
             let cell = CellFactory.createFromGridIndex(gridSize, i, values[i]);
             
+            if(cell.value > gridSize.size) {
+                throw 'Invalid cell value found at (' + cell.location.row + ',' + cell.location.column + ')';
+            }
+            
             grid._cells[i] = cell;
         }
         
