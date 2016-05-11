@@ -80,10 +80,10 @@ export class SolverState {
         
         nextState.boxes = state.boxes;
         
-        SolverState.copy(state.boxCells, nextState.boxCells);
-        SolverState.copy(state.boxValues, nextState.boxValues);
-        SolverState.copy(state.columnValues, nextState.columnValues);
-        SolverState.copy(state.rowValues, nextState.rowValues);
+        Object.assign(nextState.boxCells, state.boxCells);
+        Object.assign(nextState.boxValues, state.boxValues);
+        Object.assign(nextState.columnValues, state.columnValues);
+        Object.assign(nextState.rowValues, state.rowValues);
         
         nextState.currentBox = state.currentBox;
         nextState.currentBoxCell = state.currentBoxCell;
