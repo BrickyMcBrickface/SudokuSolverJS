@@ -57,32 +57,40 @@ export class SolverState {
     public push(item: SolverStateItem) {
         this._items[++this._itemsIndex] = item;
         
-        if(this.boxCells[item.box].push(item.boxCell) === this.complete) {
+        if(item.boxCells.push(item.boxCell) === this.complete) {
             this.boxes.push(item.box);
         }
         else this.boxes.push(0);
         
-        this.boxValues[item.box].push(item.boxCellValue);
-        this.columnValues[item.column].push(item.boxCellValue);
-        this.rowValues[item.row].push(item.boxCellValue);
+        item.boxValues.push(item.boxCellValue);
+        item.columnValues.push(item.boxCellValue);
+        item.rowValues.push(item.boxCellValue);
     }
     
     public pop(): SolverStateItem {
-        if(this._itemsIndex < 0) {
-            return undefined;
+        for(;;) {
+            if(this._itemsIndex < 0) {
+                return undefined;
+            }
+        
+            const item = this.currentItem;
+            
+            this.boxes.pop();
+            
+            item.boxCells.pop();
+            item.boxValues.pop();
+            item.columnValues.pop();
+            item.rowValues.pop();
+            
+            this._itemsIndex--;
+            
+            // Keep popping until something can be used.
+            if(item.boxCellValues === this.complete) {
+                continue;
+            }
+            
+            return item;
         }
-        
-        const item = this.currentItem;
-        
-        this.boxes.pop();
-        this.boxCells[item.box].pop();
-        this.boxValues[item.box].pop();
-        this.columnValues[item.column].pop();
-        this.rowValues[item.row].pop();
-        
-        this._itemsIndex--;
-        
-        return item;
     }
     
     public static createFromGrid(grid: Grid): SolverState {
@@ -104,7 +112,7 @@ export class SolverState {
             }
             
             if(!state.boxCells[box]) {
-                state.boxCells[box] = new SolverStateProperty();
+                state.boxCells[box] = new SolverStateProperty;
             }
             
             if(!state.columnValues[column]) {
@@ -144,4 +152,9 @@ export class SolverStateItem {
     
     public boxCellValue: number = 0;
     public boxCellValues: number = 0;
+    
+    public boxCells: SolverStateProperty;
+    public boxValues: SolverStateProperty;
+    public columnValues: SolverStateProperty;
+    public rowValues: SolverStateProperty;
 }

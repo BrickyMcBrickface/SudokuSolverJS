@@ -57,7 +57,7 @@ export class Solver {
         let currentItem: SolverStateItem = state.pop();
         
         if(currentItem === undefined) {
-            currentItem = this.getNextItem();
+            currentItem = this.getNextItem(state);
         }
         
         for(;;) {
@@ -93,7 +93,7 @@ export class Solver {
                 
                 stateChanged = true;
                 
-                currentItem = this.getNextItem();
+                currentItem = this.getNextItem(state);
                 
                 break;
             }
@@ -112,15 +112,31 @@ export class Solver {
     
     /**
      * Gets the next solver state item.
+     * @param {SolverState} state - The solver state.
      * @return {SolverStateItem} A SolverStateItem object.
      */
-    private getNextItem(): SolverStateItem {
+    private getNextItem(state: SolverState): SolverStateItem {
         let item = new SolverStateItem();
         
-        item.box = this.getNextBox();
-        item.boxCell = this.getNextBoxCell(item.box);
+        // Get the next available box.
+        item.box = this.getNextBox(state.boxes.currentValue);
+        
+        // Keep track of the box and box-cell references.
+        item.boxCells = state.boxCells[item.box];
+        item.boxValues = state.boxValues[item.box];
+        
+        // Get the next available box-cell.
+        item.boxCell = this.getNextBoxCellForItem(item.boxCells.currentValue);
+        
+        // Calculate the row and column for the box-cell.
         item.column = SolverUtility.getColumnBitForBoxCell(item.box, item.boxCell, this._grid.gridSize);
         item.row = SolverUtility.getRowBitForBoxCell(item.box, item.boxCell, this._grid.gridSize);
+        
+        // Keep track of the row and column references.
+        item.columnValues = state.columnValues[item.column];
+        item.rowValues = state.rowValues[item.row];
+        
+        // Calculate the box-cell available values.
         item.boxCellValues = this.getBoxCellValuesForItem(item);
         
         return item;
@@ -137,22 +153,19 @@ export class Solver {
     
     /**
      * Gets the next available box from the current state.
+     * @param {number} boxes - The current state boxes.
      * @return {number} The next box.
      */
-    private getNextBox(): number {
-        const boxes = this._state.boxes.currentValue;
-        
+    private getNextBox(boxes: number): number {
         return (boxes + 1) & ~boxes;
     }
     
     /**
-     * Gets the next available box-cell from the current state.
-     * @param {number} box - The box.
+     * Gets the next available box-cell.
+     * @param {number} boxCells - The box-cells.
      * @return {number} The next box-cell.
      */
-    private getNextBoxCell(box: number): number {
-        const boxCells = this._state.boxCells[box].currentValue;
-        
+    private getNextBoxCellForItem(boxCells: number): number {
         return (boxCells + 1) & ~boxCells;
     }
     
@@ -162,10 +175,8 @@ export class Solver {
      * @return {number} The available box-cell values.
      */
     private getBoxCellValuesForItem(item: SolverStateItem): number {
-        const rowValues = this._state.rowValues[item.row].currentValue;
-        const columnValues = this._state.columnValues[item.column].currentValue;
-        const boxValues = this._state.boxValues[item.box].currentValue;
-        
-        return rowValues | columnValues | boxValues;
+        return item.boxValues.currentValue |
+            item.columnValues.currentValue |
+            item.rowValues.currentValue;
     }
 }
