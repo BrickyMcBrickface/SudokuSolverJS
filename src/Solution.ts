@@ -1,5 +1,5 @@
 import { Grid } from './Grid';
-import { SolverState } from './SolverState';
+import { SolverStateItem } from './SolverState';
 import { SolverUtility } from './SolverUtility';
 import { GridLocationFactory } from './GridLocationFactory';
 import { GridUtility } from './GridUtility';
@@ -39,10 +39,10 @@ export class Solution {
     /**
      * Creates and populates a new Solution object using solver state.
      * @param {Grid} grid - The original grid.
-     * @param {SolverState[]} stateItems - The array of solver state items.
+     * @param {SolverStateItem[]} items - The array of solver state items.
      * @return {Solution} The solution.
      */
-    public static create(grid: Grid, stateItems: SolverState[]): Solution {
+    public static create(grid: Grid, items: SolverStateItem[]): Solution {
         let solution = new Solution(grid);
 
         let values: number[] = new Array(grid.gridSize.cellCount);
@@ -59,10 +59,10 @@ export class Solution {
         }
         
         // Copy the values from the state.
-        for(let state of stateItems) {
-            let box = SolverUtility.getBoxNumberForBoxBit(state.currentBox);
-            let boxCell = SolverUtility.getBoxCellNumberForBoxCellBit(state.currentBoxCell);
-            let value = SolverUtility.getValueForValueBit(state.currentBoxCellValue);
+        for(let state of items) {
+            let box = SolverUtility.getBoxNumberForBoxBit(state.box);
+            let boxCell = SolverUtility.getBoxCellNumberForBoxCellBit(state.boxCell);
+            let value = SolverUtility.getValueForValueBit(state.boxCellValue);
             
             let location = GridLocationFactory.createFromBoxCell(grid.gridSize, box, boxCell);
             let index = GridUtility.getGridIndex(location, grid.gridSize);

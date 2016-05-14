@@ -49,11 +49,11 @@ export class Program {
         const grid = Grid.load(gridSize, puzzle);
         const solver = new Solver(grid);
         
-        let solution = solver.nextSolution(false);
+        let solution = solver.nextSolution();
         
         sw.stop();
         
-        if(solution instanceof NoSolution) {
+        if(solution === undefined) {
             onSolutionNotFound(sw.elapsedMilliseconds);
         }
         else {

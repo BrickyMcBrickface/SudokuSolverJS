@@ -1,5 +1,5 @@
 import { Grid } from './Grid';
-import { SolverState, SolverStateStack } from './SolverState';
+import { SolverState, SolverStateItem } from './SolverState';
 import { Solution, NoSolution } from './Solution';
 import { SolverUtility } from './SolverUtility';
 import { GridSizeUtility } from './GridSizeUtility';
@@ -9,7 +9,7 @@ import { GridSizeUtility } from './GridSizeUtility';
  */
 export class Solver {
     private readonly _grid: Grid;
-    private _stateStack: SolverStateStack;
+    private readonly _state: SolverState;
     
     /**
      * Creates a new Solver object.
@@ -22,7 +22,7 @@ export class Solver {
         }
         
         this._grid = grid;
-        this._stateStack = new SolverStateStack(SolverState.createFromGrid(grid));
+        this._state = SolverState.createFromGrid(grid);
     }
     
     /**
@@ -36,132 +36,94 @@ export class Solver {
     /**
      * Attempts to solve the grid using the previous state (if one exists).
      * @param {boolean} log - True to log the output; False otherwise.
-     * @return {Solution | NoSolution} A Solution object (if found); otherwise, a NoSolution object.
+     * @return {Solution | undefined} A Solution object (if found); otherwise, undefined.
      */
-    public nextSolution(log?: boolean): Solution | NoSolution {
-        const complete = ((1 << this._grid.gridSize.size) >>> 0) - 1;
-        const completePlusOne = 1 << this._grid.gridSize.size;
+    public nextSolution(): Solution | undefined {
+        const grid = this._grid;
+        const state = this._state;
+        const complete = this._state.complete;
         
         // Check for completeness.
         // This can happen when the grid is complete upon load.
-        if(this._stateStack.current.boxes === complete) {
-            let solution = Solution.create(this._grid, this._stateStack.items);
+        if(state.boxes.currentValue === complete) {
+            const solution = Solution.create(grid, state.items);
                 
             // Revert the previous state (for the next solution...if any).
-            this._stateStack.pop();
+            state.pop();
             
             return solution;
         }
         
+        let currentItem: SolverStateItem = state.pop();
+        
+        if(currentItem === undefined) {
+            currentItem = this.getNextItem();
+        }
+        
         for(;;) {
-            // Get the box, box cell, and box cell values from the current state.
-            // Note: This could be zero if the state has not been initialized.
-            let box: number = this._stateStack.current.currentBox;
-            let boxCell: number = this._stateStack.current.currentBoxCell;
-            let boxCellValues: number = this._stateStack.current.currentBoxCellValues;
-            
-            // Initial state load.
-            if(this._stateStack.current.currentBox === 0) {
-                // Get the next available box, box cell, and box cell values.
-                box = this.getNextBox();
-                boxCell = this.getNextBoxCell(box);
-                boxCellValues = this.getBoxCellValues(box, boxCell);
-                
-                this._stateStack.current.currentBox = box;
-                this._stateStack.current.currentBoxCell = boxCell;
-                this._stateStack.current.currentBoxCellValues = boxCellValues;
-            }
-            
-            if(boxCellValues === complete) {
-                if(log) {
-                    console.log(this._stateStack.currentIndex + '. ', 'No available values, popping.');
-                }
-                
-                // Check if the current state is the same as the state stack current value.
-                if(this._stateStack.current === this._stateStack.first) {
-                    // This is the first item, there are no more solutions.
-                    return new NoSolution();
-                }
-                
+            if(currentItem.boxCellValues === complete) {
                 // No available values.
                 // Return to previous state.
-                this._stateStack.pop();
+                currentItem = state.pop();
+                
+                if(currentItem === undefined) {
+                    return undefined;
+                }
                 
                 continue;
             }
             
-            let value: number;
+            let stateChanged: boolean = false;
             
             // Try each available box cell value.
-            for(value = this.getNextValue(boxCellValues); 
-                value !== completePlusOne && boxCellValues !== complete; 
-                boxCellValues |= value, value = this.getNextValue(boxCellValues)) {
-                    
+            for(currentItem.boxCellValue = this.getNextValue(currentItem.boxCellValues); 
+                currentItem.boxCellValues !== complete; 
+                currentItem.boxCellValues |= currentItem.boxCellValue, 
+                currentItem.boxCellValue = this.getNextValue(currentItem.boxCellValues)) {
+                
                 // Keep track of the current permutation state.
-                this._stateStack.current.currentBoxCellValue = value;
-                this._stateStack.current.currentBoxCellValues = boxCellValues | value;
+                currentItem.boxCellValues |= currentItem.boxCellValue;
                 
-                // Keep track of state.
-                this._stateStack.push(SolverState.createFromState(this._stateStack.current));
-                this._stateStack.current.currentBox = 0;
-                this._stateStack.current.currentBoxCell = 0;
-                this._stateStack.current.currentBoxCellValue = 0;
-                this._stateStack.current.currentBoxCellValues = 0;
-                
-                // Get the row and column bits for the current box cell.
-                let row = SolverUtility.getRowBitForBoxCell(box, boxCell, this._grid.gridSize);
-                let column = SolverUtility.getColumnBitForBoxCell(box, boxCell, this._grid.gridSize);
-                
-                if(log) {
-                    console.log(this._stateStack.currentIndex + '. ', 
-                        'Checking Box=', SolverUtility.getBoxNumberForBoxBit(box), 
-                        'BoxCell=', SolverUtility.getBoxCellNumberForBoxCellBit(boxCell),
-                        'Row=', GridSizeUtility.getBoxCellRow(this._grid.gridSize, 
-                            SolverUtility.getBoxNumberForBoxBit(box),
-                            SolverUtility.getBoxCellNumberForBoxCellBit(boxCell)),
-                        'Col=', GridSizeUtility.getBoxCellColumn(this._grid.gridSize,
-                            SolverUtility.getBoxNumberForBoxBit(box),
-                            SolverUtility.getBoxCellNumberForBoxCellBit(boxCell)),
-                        'Value=', SolverUtility.getValueForValueBit(value));
-                }
-                
-                // Consume the value for the box cell.
-                this._stateStack.current.boxCells[box] |= boxCell;
-                this._stateStack.current.boxValues[box] |= value;
-                this._stateStack.current.columnValues[column] |= value;
-                this._stateStack.current.rowValues[row] |= value;
-                
-                // Check if the box is complete.
-                if(this._stateStack.current.boxValues[box] === complete) {
-                    this._stateStack.current.boxes |= box;
-                }
-                
+                state.push(currentItem);
+
                 // Check for grid completeness.
-                if(this._stateStack.current.boxes === complete) {
-                    this._stateStack.pop();
-                    
-                    return Solution.create(this._grid, this._stateStack.items);
+                if(state.boxes.currentValue === complete) {
+                    return Solution.create(grid, state.items);
                 }
+                
+                stateChanged = true;
+                
+                currentItem = this.getNextItem();
                 
                 break;
             }
             
             // Check if nothing was found.
-            if(value === completePlusOne || boxCellValues === complete) {
-                if(log) {
-                    console.log(this._stateStack.currentIndex + '. ', 'No more values to check, popping.');
-                }
-                
-                // Check if the current state is the same as the state stack current value.
-                if(this._stateStack.current === this._stateStack.first) {
-                    // This is the first item, there are no more solutions.
-                    return new NoSolution();
-                }
-                
+            if(!stateChanged && currentItem.boxCellValues === complete) {
                 // Return to the previous state.
-                this._stateStack.pop();
+                currentItem = state.pop();
+                
+                if(currentItem === undefined) {
+                    return undefined;
+                }
             }
         }
+    }
+    
+    /**
+     * Gets the next solver state item.
+     * @return {SolverStateItem} A SolverStateItem object.
+     */
+    private getNextItem(): SolverStateItem {
+        let item = new SolverStateItem();
+        
+        item.box = this.getNextBox();
+        item.boxCell = this.getNextBoxCell(item.box);
+        item.column = SolverUtility.getColumnBitForBoxCell(item.box, item.boxCell, this._grid.gridSize);
+        item.row = SolverUtility.getRowBitForBoxCell(item.box, item.boxCell, this._grid.gridSize);
+        item.boxCellValues = this.getBoxCellValuesForItem(item);
+        
+        return item;
     }
     
     /**
@@ -178,7 +140,9 @@ export class Solver {
      * @return {number} The next box.
      */
     private getNextBox(): number {
-        return (this._stateStack.current.boxes + 1) & ~this._stateStack.current.boxes;
+        const boxes = this._state.boxes.currentValue;
+        
+        return (boxes + 1) & ~boxes;
     }
     
     /**
@@ -187,24 +151,20 @@ export class Solver {
      * @return {number} The next box-cell.
      */
     private getNextBoxCell(box: number): number {
-        const boxCells = this._stateStack.current.boxCells[box];
+        const boxCells = this._state.boxCells[box].currentValue;
         
         return (boxCells + 1) & ~boxCells;
     }
     
     /**
-     * Gets the available box-cell values.
-     * @param {number} box - The box.
-     * @param {number} boxCell - The box-cell.
+     * Gets the available box-cell values for a SolverStateItem.
+     * @param {SolverStateItem} item - The state item.
      * @return {number} The available box-cell values.
      */
-    private getBoxCellValues(box: number, boxCell: number): number {
-        const row = SolverUtility.getRowBitForBoxCell(box, boxCell, this._grid.gridSize);
-        const column = SolverUtility.getColumnBitForBoxCell(box, boxCell, this._grid.gridSize);
-        
-        const rowValues = this._stateStack.current.rowValues[row];
-        const columnValues = this._stateStack.current.columnValues[column];
-        const boxValues = this._stateStack.current.boxValues[box];
+    private getBoxCellValuesForItem(item: SolverStateItem): number {
+        const rowValues = this._state.rowValues[item.row].currentValue;
+        const columnValues = this._state.columnValues[item.column].currentValue;
+        const boxValues = this._state.boxValues[item.box].currentValue;
         
         return rowValues | columnValues | boxValues;
     }
