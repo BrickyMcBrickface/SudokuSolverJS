@@ -49,7 +49,7 @@ export class Program {
         const grid = Grid.load(gridSize, puzzle);
         const solver = new Solver(grid);
         
-        let solution = solver.nextSolution();
+        let solution = solver.solve();
         
         sw.stop();
         

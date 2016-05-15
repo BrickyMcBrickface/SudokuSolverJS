@@ -1,4 +1,5 @@
 import { Grid } from './Grid';
+import { GridSize } from './GridSize';
 import { SolverState, SolverStateItem } from './SolverState';
 import { Solution, NoSolution } from './Solution';
 import { SolverUtility } from './SolverUtility';
@@ -10,6 +11,7 @@ import { GridSizeUtility } from './GridSizeUtility';
 export class Solver {
     private readonly _grid: Grid;
     private readonly _state: SolverState;
+    private readonly _cache: SolverCache;
     
     /**
      * Creates a new Solver object.
@@ -23,6 +25,7 @@ export class Solver {
         
         this._grid = grid;
         this._state = SolverState.createFromGrid(grid);
+        this._cache = new SolverCache(grid.gridSize);
     }
     
     /**
@@ -34,52 +37,23 @@ export class Solver {
     }
     
     /**
-     * Attempts to solve the grid using the previous state (if one exists).
+     * Attempts to solve the first solution for a grid.
      * @param {boolean} log - True to log the output; False otherwise.
      * @return {Solution | undefined} A Solution object (if found); otherwise, undefined.
      */
-    public nextSolution(): Solution | undefined {
+    public solve(): Solution | undefined {
         const grid = this._grid;
         const state = this._state;
         const complete = this._state.complete;
         
-        // Check for completeness.
-        // This can happen when the grid is complete upon load.
-        if(state.boxes.currentValue === complete) {
-            const solution = Solution.create(grid, state.items);
-                
-            // Revert the previous state (for the next solution...if any).
-            state.pop();
-            
-            return solution;
-        }
+        // TODO: Check for a complete board.
         
-        let currentItem: SolverStateItem = state.pop();
-        
-        if(currentItem === undefined) {
-            currentItem = this.getNextItem(state);
-        }
-        
-        for(;;) {
-            if(currentItem.boxCellValues === complete) {
-                // No available values.
-                // Return to previous state.
-                currentItem = state.pop();
-                
-                if(currentItem === undefined) {
-                    return undefined;
-                }
-                
-                continue;
-            }
-            
-            let stateChanged: boolean = false;
-            
+        mainLoop: for(let currentItem = this.getNextItem(state); ; ) {
             // Try each available box cell value.
-            for(currentItem.boxCellValue = this.getNextValue(currentItem.boxCellValues); 
+            for(currentItem.boxCellValue = (currentItem.boxCellValues + 1) & ~currentItem.boxCellValues; /*this.getNextValue(currentItem.boxCellValues)*/ 
                 currentItem.boxCellValues !== complete; 
                 currentItem.boxCellValues |= currentItem.boxCellValue, 
-                currentItem.boxCellValue = this.getNextValue(currentItem.boxCellValues)) {
+                currentItem.boxCellValue = (currentItem.boxCellValues + 1) & ~currentItem.boxCellValues /*this.getNextValue(currentItem.boxCellValues)*/) {
                 
                 // Keep track of the current permutation state.
                 currentItem.boxCellValues |= currentItem.boxCellValue;
@@ -91,21 +65,22 @@ export class Solver {
                     return Solution.create(grid, state.items);
                 }
                 
-                stateChanged = true;
+                // Set the next state, but also make sure that it is able to be used.
+                if((currentItem = this.getNextItem(state)).boxCellValues === complete) {
+                    // Next state cannot be used, go to a previous state.
+                    if((currentItem = state.pop()) === undefined) {
+                        // No previous state could be found, return nothing.
+                        return undefined;
+                    }
+                }
                 
-                currentItem = this.getNextItem(state);
-                
-                break;
+                continue mainLoop;
             }
             
-            // Check if nothing was found.
-            if(!stateChanged && currentItem.boxCellValues === complete) {
-                // Return to the previous state.
-                currentItem = state.pop();
-                
-                if(currentItem === undefined) {
-                    return undefined;
-                }
+            // Nothing found for current state, go to a previous state.
+            if((currentItem = state.pop()) === undefined) {
+                // No previous state could be found, return nothing.
+                return undefined;
             }
         }
     }
@@ -119,25 +94,31 @@ export class Solver {
         let item = new SolverStateItem();
         
         // Get the next available box.
-        item.box = this.getNextBox(state.boxes.currentValue);
+        //item.box = this.getNextBox(state.boxes.currentValue);
+        item.box = (state.boxes.currentValue + 1) & ~state.boxes.currentValue;
         
         // Keep track of the box and box-cell references.
         item.boxCells = state.boxCells[item.box];
         item.boxValues = state.boxValues[item.box];
         
         // Get the next available box-cell.
-        item.boxCell = this.getNextBoxCellForItem(item.boxCells.currentValue);
+        //item.boxCell = this.getNextBoxCellForItem(item.boxCells.currentValue);
+        item.boxCell = (item.boxCells.currentValue + 1) & ~item.boxCells.currentValue;
         
         // Calculate the row and column for the box-cell.
-        item.column = SolverUtility.getColumnBitForBoxCell(item.box, item.boxCell, this._grid.gridSize);
-        item.row = SolverUtility.getRowBitForBoxCell(item.box, item.boxCell, this._grid.gridSize);
+        item.column = this._cache.getColumnBitForBoxCell(item.box, item.boxCell);
+        item.row = this._cache.getRowBitForBoxCell(item.box, item.boxCell);
         
         // Keep track of the row and column references.
         item.columnValues = state.columnValues[item.column];
         item.rowValues = state.rowValues[item.row];
         
         // Calculate the box-cell available values.
-        item.boxCellValues = this.getBoxCellValuesForItem(item);
+        //item.boxCellValues = this.getBoxCellValuesForItem(item);
+        item.boxCellValues = 
+            item.boxValues.currentValue |
+            item.columnValues.currentValue |
+            item.rowValues.currentValue;
         
         return item;
     }
@@ -178,5 +159,52 @@ export class Solver {
         return item.boxValues.currentValue |
             item.columnValues.currentValue |
             item.rowValues.currentValue;
+    }
+}
+
+class SolverCache {
+    private readonly _gridSize: GridSize;
+    
+    private _boxCellToColumnCache: { [box: number]: { [boxCell: number]: number } } = { };
+    private _boxCellToRowCache: { [box: number]: { [boxCell: number]: number } } = { };
+    
+    public constructor(gridSize: GridSize) {
+        this._gridSize = gridSize;
+    }
+    
+    public getColumnBitForBoxCell(box: number, boxCell: number): number {
+        let boxCache = this._boxCellToColumnCache[box];
+        
+        if(boxCache === undefined) {
+            boxCache = this._boxCellToColumnCache[box] = { };
+            
+            return boxCache[boxCell] = SolverUtility.getColumnBitForBoxCell(box, boxCell, this._gridSize);
+        }
+        
+        let column = boxCache[boxCell];
+        
+        if(column === undefined) {
+            return boxCache[boxCell] = SolverUtility.getColumnBitForBoxCell(box, boxCell, this._gridSize);
+        }
+        
+        return column;
+    }
+    
+    public getRowBitForBoxCell(box: number, boxCell: number): number {
+        let boxCache = this._boxCellToRowCache[box];
+        
+        if(boxCache === undefined) {
+            boxCache = this._boxCellToRowCache[box] = { };
+            
+            return boxCache[boxCell] = SolverUtility.getRowBitForBoxCell(box, boxCell, this._gridSize);
+        }
+        
+        let row = boxCache[boxCell];
+        
+        if(row === undefined) {
+            return boxCache[boxCell] = SolverUtility.getRowBitForBoxCell(box, boxCell, this._gridSize);
+        }
+        
+        return row;
     }
 }
