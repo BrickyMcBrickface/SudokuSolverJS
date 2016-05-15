@@ -1,28 +1,51 @@
 import { Grid } from './Grid';
 import { SolverUtility } from './SolverUtility';
 
-class SolverStateProperty {
+/**
+ * SolverState box/column/row value state stack.
+ */
+class SolverStatePropertyStack {
     private _values: number[] = [];
     private _index: number = 0;
     
+    /**
+     * Gets the values.
+     * @return {number[]} The stack values.
+     */
     public get values(): number[] {
         return this._values.concat([]);
     }
     
+    /**
+     * Gets the current stack index.
+     * @return {number} The current stack index.
+     */
     public get index(): number {
         return this._index;
     }
     
+    /**
+     * Gets the current stack value.
+     * @return {number} The current stack value.
+     */
     public get currentValue(): number {
         return this._values[this._index];
     }
     
+    /**
+     * Adds a new value to the stack and returns it along with the previous values.
+     * @param {number} value - The value to add.
+     * @return {number} The newly added value plus the previous values.
+     */
     public push(value: number): number {
         const currentValue = this._values[this._index];
         
         return this._values[++this._index] = currentValue | value;
     }
     
+    /**
+     * Moves to the previous stack value.
+     */
     public pop() {
         this._index--;
     }
@@ -32,11 +55,11 @@ export class SolverState {
     private _items: SolverStateItem[] = [];
     private _itemsIndex: number = -1;
     
-    public boxes: SolverStateProperty = new SolverStateProperty();
-    public boxCells: { [box: number]: SolverStateProperty } = { };
-    public boxValues: { [box: number]: SolverStateProperty } = { };
-    public columnValues: { [column: number]: SolverStateProperty } = { };
-    public rowValues: { [row: number]: SolverStateProperty } = { };
+    public boxes: SolverStatePropertyStack = new SolverStatePropertyStack();
+    public boxCells: { [box: number]: SolverStatePropertyStack } = { };
+    public boxValues: { [box: number]: SolverStatePropertyStack } = { };
+    public columnValues: { [column: number]: SolverStatePropertyStack } = { };
+    public rowValues: { [row: number]: SolverStatePropertyStack } = { };
 
     public complete: number;
     
@@ -108,19 +131,19 @@ export class SolverState {
             const value = SolverUtility.getValueBit(cell.value);
             
             if(!state.boxValues[box]) {
-                state.boxValues[box] = new SolverStateProperty();
+                state.boxValues[box] = new SolverStatePropertyStack();
             }
             
             if(!state.boxCells[box]) {
-                state.boxCells[box] = new SolverStateProperty;
+                state.boxCells[box] = new SolverStatePropertyStack;
             }
             
             if(!state.columnValues[column]) {
-                state.columnValues[column] = new SolverStateProperty();
+                state.columnValues[column] = new SolverStatePropertyStack();
             }
             
             if(!state.rowValues[row]) {
-                state.rowValues[row] = new SolverStateProperty();
+                state.rowValues[row] = new SolverStatePropertyStack();
             }
             
             state.boxValues[box].push(value);
@@ -153,8 +176,8 @@ export class SolverStateItem {
     public boxCellValue: number = 0;
     public boxCellValues: number = 0;
     
-    public boxCells: SolverStateProperty;
-    public boxValues: SolverStateProperty;
-    public columnValues: SolverStateProperty;
-    public rowValues: SolverStateProperty;
+    public boxCells: SolverStatePropertyStack;
+    public boxValues: SolverStatePropertyStack;
+    public columnValues: SolverStatePropertyStack;
+    public rowValues: SolverStatePropertyStack;
 }

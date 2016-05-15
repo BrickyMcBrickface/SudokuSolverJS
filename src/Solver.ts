@@ -50,10 +50,10 @@ export class Solver {
         
         mainLoop: for(let currentItem = this.getNextItem(state); ; ) {
             // Try each available box cell value.
-            for(currentItem.boxCellValue = (currentItem.boxCellValues + 1) & ~currentItem.boxCellValues; /*this.getNextValue(currentItem.boxCellValues)*/ 
+            for(currentItem.boxCellValue = (currentItem.boxCellValues + 1) & ~currentItem.boxCellValues;
                 currentItem.boxCellValues !== complete; 
                 currentItem.boxCellValues |= currentItem.boxCellValue, 
-                currentItem.boxCellValue = (currentItem.boxCellValues + 1) & ~currentItem.boxCellValues /*this.getNextValue(currentItem.boxCellValues)*/) {
+                currentItem.boxCellValue = (currentItem.boxCellValues + 1) & ~currentItem.boxCellValues) {
                 
                 // Keep track of the current permutation state.
                 currentItem.boxCellValues |= currentItem.boxCellValue;
@@ -94,7 +94,6 @@ export class Solver {
         let item = new SolverStateItem();
         
         // Get the next available box.
-        //item.box = this.getNextBox(state.boxes.currentValue);
         item.box = (state.boxes.currentValue + 1) & ~state.boxes.currentValue;
         
         // Keep track of the box and box-cell references.
@@ -102,7 +101,6 @@ export class Solver {
         item.boxValues = state.boxValues[item.box];
         
         // Get the next available box-cell.
-        //item.boxCell = this.getNextBoxCellForItem(item.boxCells.currentValue);
         item.boxCell = (item.boxCells.currentValue + 1) & ~item.boxCells.currentValue;
         
         // Calculate the row and column for the box-cell.
@@ -114,7 +112,6 @@ export class Solver {
         item.rowValues = state.rowValues[item.row];
         
         // Calculate the box-cell available values.
-        //item.boxCellValues = this.getBoxCellValuesForItem(item);
         item.boxCellValues = 
             item.boxValues.currentValue |
             item.columnValues.currentValue |
@@ -122,56 +119,32 @@ export class Solver {
         
         return item;
     }
-    
-    /**
-     * Gets the next available value from the available box-cell values.
-     * @param {number} values - The box-cell available values.
-     * @return {number} The next value.
-     */
-    private getNextValue(values: number): number {
-        return (values + 1) & ~values;
-    }
-    
-    /**
-     * Gets the next available box from the current state.
-     * @param {number} boxes - The current state boxes.
-     * @return {number} The next box.
-     */
-    private getNextBox(boxes: number): number {
-        return (boxes + 1) & ~boxes;
-    }
-    
-    /**
-     * Gets the next available box-cell.
-     * @param {number} boxCells - The box-cells.
-     * @return {number} The next box-cell.
-     */
-    private getNextBoxCellForItem(boxCells: number): number {
-        return (boxCells + 1) & ~boxCells;
-    }
-    
-    /**
-     * Gets the available box-cell values for a SolverStateItem.
-     * @param {SolverStateItem} item - The state item.
-     * @return {number} The available box-cell values.
-     */
-    private getBoxCellValuesForItem(item: SolverStateItem): number {
-        return item.boxValues.currentValue |
-            item.columnValues.currentValue |
-            item.rowValues.currentValue;
-    }
 }
 
+/**
+ * Solver cache.
+ */
 class SolverCache {
     private readonly _gridSize: GridSize;
     
     private _boxCellToColumnCache: { [box: number]: { [boxCell: number]: number } } = { };
     private _boxCellToRowCache: { [box: number]: { [boxCell: number]: number } } = { };
     
+    /**
+     * Creates a new SolverCache object.
+     * @constructor
+     * @param {GridSize} gridSize - The grid size.
+     */
     public constructor(gridSize: GridSize) {
         this._gridSize = gridSize;
     }
     
+    /**
+     * Gets the column bit for a box-cell.
+     * @param {number} box - The box bit.
+     * @param {number} boxCell - The box-cell bit.
+     * @return {number} The column bit.
+     */
     public getColumnBitForBoxCell(box: number, boxCell: number): number {
         let boxCache = this._boxCellToColumnCache[box];
         
@@ -190,6 +163,12 @@ class SolverCache {
         return column;
     }
     
+    /**
+     * Gets the row bit for a box-cell.
+     * @param {number} box - The box bit.
+     * @param {number} boxCell - The box-cell bit.
+     * @return {number} The row bit.
+     */
     public getRowBitForBoxCell(box: number, boxCell: number): number {
         let boxCache = this._boxCellToRowCache[box];
         
