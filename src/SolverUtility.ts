@@ -169,6 +169,14 @@ export class SolverUtility {
         return SolverUtility.log2(boxBit) + 1;
     }
     
+    public static getRowNumberForRowBit(rowBit: number): number {
+        return SolverUtility.log2(rowBit) + 1;
+    }
+    
+    public static getColumnNumberForColumnBit(columnBit: number): number {
+        return SolverUtility.log2(columnBit) + 1;
+    }
+    
     /**
      * Gets the box-cell number for a box-cell bit value.
      * @param {number} boxCellBit - The box-cell bit value.

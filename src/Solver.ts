@@ -59,19 +59,15 @@ export class Solver {
                 currentItem.boxCellValues |= currentItem.boxCellValue;
                 
                 state.push(currentItem);
-
+                
                 // Check for grid completeness.
                 if(state.boxes.currentValue === complete) {
                     return Solution.create(grid, state.items);
                 }
                 
-                // Set the next state, but also make sure that it is able to be used.
-                if((currentItem = this.getNextItem(state)).boxCellValues === complete) {
-                    // Next state cannot be used, go to a previous state.
-                    if((currentItem = state.pop()) === undefined) {
-                        // No previous state could be found, return nothing.
-                        return undefined;
-                    }
+                // Set the next state.
+                if((currentItem = this.getNextItem(state)) === undefined) {
+                    return undefined;
                 }
                 
                 continue mainLoop;
@@ -116,6 +112,11 @@ export class Solver {
             item.boxValues.currentValue |
             item.columnValues.currentValue |
             item.rowValues.currentValue;
+         
+        // Validate the next item. If it cannot be used, then go to a previous state.
+        if(item.boxCellValues === state.complete) {
+            return state.pop();
+        }
         
         return item;
     }

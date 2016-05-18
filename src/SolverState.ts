@@ -32,6 +32,10 @@ class SolverStatePropertyStack {
         return this._values[this._index];
     }
     
+    public constructor(size: number) {
+        this._values = new Array(size);
+    }
+    
     /**
      * Adds a new value to the stack and returns it along with the previous values.
      * @param {number} value - The value to add.
@@ -55,7 +59,7 @@ export class SolverState {
     private _items: SolverStateItem[] = [];
     private _itemsIndex: number = -1;
     
-    public boxes: SolverStatePropertyStack = new SolverStatePropertyStack();
+    public boxes: SolverStatePropertyStack;// = new SolverStatePropertyStack();
     public boxCells: { [box: number]: SolverStatePropertyStack } = { };
     public boxValues: { [box: number]: SolverStatePropertyStack } = { };
     public columnValues: { [column: number]: SolverStatePropertyStack } = { };
@@ -71,6 +75,10 @@ export class SolverState {
         }
         
         return this._items[this._itemsIndex];
+    }
+    
+    public get currentItemIndex(): number {
+        return this._itemsIndex;
     }
     
     public get items(): SolverStateItem[] {
@@ -91,13 +99,7 @@ export class SolverState {
     }
     
     public pop(): SolverStateItem {
-        for(;;) {
-            if(this._itemsIndex < 0) {
-                return undefined;
-            }
-        
-            const item = this.currentItem;
-            
+        for(let item = this.currentItem; item !== undefined; item = this.currentItem) {
             this.boxes.pop();
             
             item.boxCells.pop();
@@ -114,12 +116,15 @@ export class SolverState {
             
             return item;
         }
+        
+        return undefined;
     }
     
     public static createFromGrid(grid: Grid): SolverState {
         let state = new SolverState();
         
         state.complete = ((1 << grid.gridSize.size) >>> 0) - 1;
+        state.boxes = new SolverStatePropertyStack(grid.gridSize.cellCount * 2);
         
         for(let cell of grid.cells) {
             const location = cell.location;
@@ -131,19 +136,19 @@ export class SolverState {
             const value = SolverUtility.getValueBit(cell.value);
             
             if(!state.boxValues[box]) {
-                state.boxValues[box] = new SolverStatePropertyStack();
+                state.boxValues[box] = new SolverStatePropertyStack(grid.gridSize.cellCount * 2);
             }
             
             if(!state.boxCells[box]) {
-                state.boxCells[box] = new SolverStatePropertyStack;
+                state.boxCells[box] = new SolverStatePropertyStack(grid.gridSize.cellCount * 2);
             }
             
             if(!state.columnValues[column]) {
-                state.columnValues[column] = new SolverStatePropertyStack();
+                state.columnValues[column] = new SolverStatePropertyStack(grid.gridSize.cellCount * 2);
             }
             
             if(!state.rowValues[row]) {
-                state.rowValues[row] = new SolverStatePropertyStack();
+                state.rowValues[row] = new SolverStatePropertyStack(grid.gridSize.cellCount * 2);
             }
             
             state.boxValues[box].push(value);
