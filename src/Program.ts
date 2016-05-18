@@ -2,6 +2,7 @@ import { Grid } from './Grid';
 import { GridSize } from './GridSize';
 import { Solver } from './Solver';
 import { Solution, NoSolution } from './Solution';
+import { GridSolver, GridSolution } from './GridSolver';
 
 export class Program {
     private constructor() { }
@@ -15,27 +16,56 @@ export class Program {
                 }, (elapsedMilliseconds: number) => {
                     console.log('A solution could not be found for the ' + 
                         item.size.size + 'x' + item.size.size + ' ' + item.label + ' puzzle!');
-                });
+                }, false);
+        }
+        
+        for(let item of puzzles) {
+            Program.solvePuzzle(item.values, item.size,
+                (solution: GridSolution, elapsedMilliseconds: number) => {
+                    console.log(item.size.size + 'x' + item.size.size + ' ' + item.label + ' puzzle solved in ' + elapsedMilliseconds + 'ms!');
+                    console.log('solution=' + solution.solvedGrid.toString());
+                }, (elapsedMilliseconds: number) => {
+                    console.log('A solution could not be found for the ' + 
+                        item.size.size + 'x' + item.size.size + ' ' + item.label + ' puzzle!');
+                }, true);
         }
     }
     
     private static solvePuzzle(puzzle: number[], gridSize: GridSize,
-        onSolutionFound: (solution: Solution, elapsedMilliseconds: number) => void,
-        onSolutionNotFound: (elapsedMilliseconds: number) => void) {
+        onSolutionFound: (solution: Solution | GridSolution, elapsedMilliseconds: number) => void,
+        onSolutionNotFound: (elapsedMilliseconds: number) => void,
+        useNewSolver: boolean) {
         
         const sw = Stopwatch.startNew();
         const grid = Grid.load(gridSize, puzzle);
-        const solver = new Solver(grid);
         
-        let solution = solver.solve();
-        
-        sw.stop();
-        
-        if(solution === undefined) {
-            onSolutionNotFound(sw.elapsedMilliseconds);
+        if(!useNewSolver) {
+            const solver = new Solver(grid);
+            
+            let solution = solver.solve();
+            
+            sw.stop();
+            
+            if(solution === undefined) {
+                onSolutionNotFound(sw.elapsedMilliseconds);
+            }
+            else {
+                onSolutionFound((solution as Solution), sw.elapsedMilliseconds);
+            }
         }
         else {
-            onSolutionFound((solution as Solution), sw.elapsedMilliseconds);
+            const solver = new GridSolver(grid);
+            
+            let solution = solver.solve();
+            
+            sw.stop();
+            
+            if(solution === undefined) {
+                onSolutionNotFound(sw.elapsedMilliseconds);
+            }
+            else {
+                onSolutionFound((solution as GridSolution), sw.elapsedMilliseconds);
+            }
         }
     }
 }
