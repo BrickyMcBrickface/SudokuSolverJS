@@ -1,6 +1,5 @@
 import { GridLocation } from './GridLocation';
 import { GridSize } from './GridSize';
-import { BoxSize } from './BoxSize';
 import { GridLocationFactory } from './GridLocationFactory';
 
 /**
@@ -55,11 +54,11 @@ export class SolverUtility {
     /**
      * Gets the grid location box-cell bit value.
      * @param {GridLocation} location - The grid location.
-     * @param {BoxSize} boxSize - The box size.
+     * @param {GridSize} gridSize - The grid size.
      * @return {number} The box-cell bit value.
      */
-    public static getBoxCellBit(location: GridLocation, boxSize: BoxSize) : number {
-        const boxCellNumber = SolverUtility.getBoxCellNumber(location, boxSize);
+    public static getBoxCellBit(location: GridLocation, gridSize: GridSize) : number {
+        const boxCellNumber = SolverUtility.getBoxCellNumber(location, gridSize);
         
         return 1 << (boxCellNumber - 1);
     }
@@ -71,8 +70,8 @@ export class SolverUtility {
      * @return {number} The box number.
      */
     public static getBoxNumber(location: GridLocation, gridSize: GridSize): number {
-        const stackNumber = SolverUtility.getStackNumber(location, gridSize.boxSize);
-        const bandNumber = SolverUtility.getBandNumber(location, gridSize.boxSize);
+        const stackNumber = SolverUtility.getStackNumber(location, gridSize);
+        const bandNumber = SolverUtility.getBandNumber(location, gridSize);
         
         return stackNumber + gridSize.bandSize * (bandNumber - 1);
     }
@@ -80,54 +79,54 @@ export class SolverUtility {
     /**
      * Gets the grid location box-cell number.
      * @param {GridLocation} location - The grid location.
-     * @param {BoxSize} boxSize - The box size.
+     * @param {GridSize} gridSize - The grid size.
      * @return {number} The box-cell number.
      */
-    public static getBoxCellNumber(location: GridLocation, boxSize: BoxSize): number {
-        const boxRowNumber = SolverUtility.getBoxRowNumber(location, boxSize);
-        const boxColumnNumber = SolverUtility.getBoxColumnNumber(location, boxSize);
+    public static getBoxCellNumber(location: GridLocation, gridSize: GridSize): number {
+        const boxRowNumber = SolverUtility.getBoxRowNumber(location, gridSize);
+        const boxColumnNumber = SolverUtility.getBoxColumnNumber(location, gridSize);
         
-        return boxColumnNumber + boxSize.width * (boxRowNumber - 1);
+        return boxColumnNumber + gridSize.boxWidth * (boxRowNumber - 1);
     }
     
     /**
      * Gets the column number of a box for a grid location.
      * @param {GridLocation} location - The grid location.
-     * @param {BoxSize} boxSize - The box size.
+     * @param {GridSize} gridSize - The grid size.
      * @return {number} The column number of the box.
      */
-    public static getBoxColumnNumber(location: GridLocation, boxSize: BoxSize): number {
-        return ((location.column - 1) % boxSize.width) + 1;
+    public static getBoxColumnNumber(location: GridLocation, gridSize: GridSize): number {
+        return ((location.column - 1) % gridSize.boxWidth) + 1;
     }
     
     /**
      * Gets the row number of a box for a grid location.
      * @param {GridLocation} location - The grid location.
-     * @param {BoxSize} boxSize - The box size.
+     * @param {GridSize} gridSize - The grid size.
      * @return {number} The row number of the box.
      */
-    public static getBoxRowNumber(location: GridLocation, boxSize: BoxSize): number {
-        return ((location.row - 1) % boxSize.height) + 1;
+    public static getBoxRowNumber(location: GridLocation, gridSize: GridSize): number {
+        return ((location.row - 1) % gridSize.boxHeight) + 1;
     }
     
     /**
      * Gets the stack number for a grid location.
      * @param {GridLocation} location - The grid location.
-     * @param {BoxSize} boxSize - The box size.
+     * @param {GridSize} gridSize - The grid size.
      * @return {number} The stack number.
      */
-    public static getStackNumber(location: GridLocation, boxSize: BoxSize): number {
-        return Math.floor((location.column - 1) / boxSize.width) + 1;
+    public static getStackNumber(location: GridLocation, gridSize: GridSize): number {
+        return Math.floor((location.column - 1) / gridSize.boxWidth) + 1;
     }
     
     /**
      * Gets the band number for a grid location.
      * @param {GridLocation} location - The grid location.
-     * @param {BoxSize} boxSize - The box size.
+     * @param {GridSize} gridSize - The grid size.
      * @return {number} The band number.
      */
-    public static getBandNumber(location: GridLocation, boxSize: BoxSize): number {
-        return Math.floor((location.row - 1) / boxSize.height) + 1;
+    public static getBandNumber(location: GridLocation, gridSize: GridSize): number {
+        return Math.floor((location.row - 1) / gridSize.boxHeight) + 1;
     }
     
     /**

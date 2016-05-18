@@ -132,7 +132,7 @@ export class SolverState {
             const row = SolverUtility.getRowBit(location);
             const column = SolverUtility.getColumnBit(location);
             const box = SolverUtility.getBoxBit(location, grid.gridSize);
-            const boxCell = SolverUtility.getBoxCellBit(location, grid.gridSize.boxSize);
+            const boxCell = SolverUtility.getBoxCellBit(location, grid.gridSize);
             const value = SolverUtility.getValueBit(cell.value);
             
             if(!state.boxValues[box]) {

@@ -1,34 +1,46 @@
-import { BoxSize } from './BoxSize';
-
 /**
  * Represents the grid dimensions.
  */
 export class GridSize {
-    private readonly _boxSize: BoxSize;
+    private readonly _boxWidth: number;
+    private readonly _boxHeight: number;
+    
+    private readonly _size: number;
     
     /**
      * Creates a new GridSize object.
      * @constructor
-     * @param {BoxSize} boxSize - The box size of the grid.
+     * @param {number} boxWidth - The box width.
+     * @param {number} boxHeight - The box height.
      */
-    public constructor(boxSize: BoxSize) {
-        this._boxSize = boxSize;
+    public constructor(boxWidth: number, boxHeight: number) {
+        this._boxWidth = boxWidth;
+        this._boxHeight = boxHeight;
+        this._size = boxWidth * boxHeight;
     }
     
     /**
-     * Gets the box size of the grid.
-     * @return {BoxSize} The Grid's box size.
+     * Gets the box width of the grid.
+     * @return {number} The grid's box width.
      */
-    public get boxSize(): BoxSize {
-        return this._boxSize;
+    public get boxWidth(): number {
+        return this._boxWidth;
     }
     
     /**
-     * Gets the grid's size (width and height).
-     * @return {number} The size of the grid.
+     * Gets the box height of the grid.
+     * @return {number} The grid's box height.
+     */
+    public get boxHeight(): number {
+        return this._boxHeight;
+    }
+    
+    /**
+     * Gets the size of the grid (width and height).
+     * @return {number} The grid's size.
      */
     public get size(): number {
-        return this.boxSize.width * this.boxSize.height;
+        return this._size;
     }
     
     /**
@@ -40,21 +52,21 @@ export class GridSize {
     }
     
     /**
-     * Gets the grid's band size in number of boxes.
-     * @return {number} The band size of the grid.
+     * Gets the band size of the grid in number of boxes.
+     * @return {number} The grid's band size.
      */
     public get bandSize(): number {
-        return this.boxSize.height;
+        return this._boxHeight;
     }
     
     /**
-     * Gets the grid's stack size in number of boxes.
-     * @return {number} The stack size of the grid.
+     * Gets the stack size of the grid in number of boxes.
+     * @return {number} The grid's stack size.
      */
     public get stackSize(): number {
-        return this.boxSize.width;
+        return this._boxWidth;
     }
     
     /** Default 9x9 Sudoku puzzle grid size. */
-    public static readonly Default: GridSize = new GridSize(BoxSize.Default);
+    public static readonly Default: GridSize = new GridSize(3, 3);
 }

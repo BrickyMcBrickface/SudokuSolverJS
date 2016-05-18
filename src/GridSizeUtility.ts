@@ -1,5 +1,4 @@
 import { GridSize } from './GridSize';
-import { BoxSizeUtility } from './BoxSizeUtility';
 
 /**
  * Utility class for GridSize.
@@ -34,10 +33,10 @@ export class GridSizeUtility {
      * @param {number} boxCell - The box-cell number.
      * @return {number} The box-cell row number.
      */
-    public static getBoxCellRow(gridSize: GridSize, box: number, boxCell: number): number {
+    public static getGridBoxCellRow(gridSize: GridSize, box: number, boxCell: number): number {
         const band = GridSizeUtility.getBoxBand(gridSize, box);
-        const boxCellRow = BoxSizeUtility.getBoxCellRow(gridSize.boxSize, boxCell);
-        const boxRow = (band - 1) * gridSize.boxSize.height + 1;
+        const boxCellRow = GridSizeUtility.getBoxCellRow(gridSize, boxCell);
+        const boxRow = (band - 1) * gridSize.boxHeight + 1;
         
         return boxRow + (boxCellRow - 1);
     }
@@ -49,11 +48,31 @@ export class GridSizeUtility {
      * @param {number} boxCell - The box-cell number.
      * @return {number} The box-cell column number.
      */
-    public static getBoxCellColumn(gridSize: GridSize, box: number, boxCell: number): number {
+    public static getGridBoxCellColumn(gridSize: GridSize, box: number, boxCell: number): number {
         const stack = GridSizeUtility.getBoxStack(gridSize, box);
-        const boxCellColumn = BoxSizeUtility.getBoxCellColumn(gridSize.boxSize, boxCell);
-        const boxColumn = (stack - 1) * gridSize.boxSize.width + 1;
+        const boxCellColumn = GridSizeUtility.getBoxCellColumn(gridSize, boxCell);
+        const boxColumn = (stack - 1) * gridSize.boxWidth + 1;
         
         return boxColumn + (boxCellColumn - 1);
+    }
+    
+    /**
+     * Gets a box-cell row number.
+     * @param {GridSize} gridSize - The grid size.
+     * @param {number} boxCell - The box-cell number.
+     * @return {number} The box-cell row number.
+     */
+    public static getBoxCellRow(gridSize: GridSize, boxCell: number): number {
+        return Math.floor((boxCell - 1) / gridSize.boxWidth) + 1;
+    }
+    
+    /**
+     * Gets a box-cell column number.
+     * @param {GridSize} gridSize - The grid size.
+     * @param {number} boxCell - The box-cell number.
+     * @return {number} The box-cell column number.
+     */
+    public static getBoxCellColumn(gridSize: GridSize, boxCell: number): number {
+        return ((boxCell - 1) % gridSize.boxWidth) + 1;
     }
 }

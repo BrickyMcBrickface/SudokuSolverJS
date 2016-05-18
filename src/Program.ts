@@ -1,6 +1,5 @@
 import { Grid } from './Grid';
 import { GridSize } from './GridSize';
-import { BoxSize } from './BoxSize';
 import { Solver } from './Solver';
 import { Solution, NoSolution } from './Solution';
 
