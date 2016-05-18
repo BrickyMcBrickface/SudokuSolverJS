@@ -7,8 +7,12 @@ import { GridSolver, GridSolution } from './GridSolver';
 export class Program {
     private constructor() { }
     
-    public static main(puzzles: { values: number[], size: GridSize, label: string }[]) {
+    public static main(puzzles: { values: number[], size: GridSize, label: string, skipOldSolver?: boolean }[]) {
         for(let item of puzzles) {
+            if(item.skipOldSolver) {
+                continue;
+            }
+            
             Program.solvePuzzle(item.values, item.size,
                 (solution: Solution, elapsedMilliseconds: number) => {
                     console.log(item.size.size + 'x' + item.size.size + ' ' + item.label + ' puzzle solved in ' + elapsedMilliseconds + 'ms!');

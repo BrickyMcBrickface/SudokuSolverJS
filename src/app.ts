@@ -7,5 +7,5 @@ Program.main([
     { values: Puzzles.Puzzle9x9.MediumPuzzle, size: GridSize.Default, label: 'Medium' },
     { values: Puzzles.Puzzle9x9.HardPuzzle, size: GridSize.Default, label: 'Hard' },
     
-    //{ values: Puzzles.Puzzle16x16.UnknownDifficultyPuzzle, size: new GridSize(4, 4), label: 'Unknown Difficulty' }
+    { values: Puzzles.Puzzle16x16.UnknownDifficultyPuzzle, size: new GridSize(4, 4), label: 'Unknown Difficulty', skipOldSolver: true }
 ]);
